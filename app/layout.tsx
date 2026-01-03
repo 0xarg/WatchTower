@@ -10,7 +10,7 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: "WatchTower",
-  description: "Website uptime monitoring & incident alerts",
+  description: "Track website uptime and send alerts",
 };
 
 const geistSans = Geist({
