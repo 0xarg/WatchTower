@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { Monitors } from "@/lib/types/database/monitors";
 import axios from "axios";
+import { headers } from "next/headers";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 
 const INITIAL_MONITOR = {
@@ -97,7 +98,11 @@ const page = () => {
 
   const handleCheckStatus = useCallback(async () => {
     try {
-      const res = await axios.post("/api/worker/checks");
+      const res = await axios.post("/api/worker/checks", {
+        headers: {
+          "x-watchtower-secret": process.env.WORKER_SECRET,
+        },
+      });
       console.log(res.data);
       alert(res.data.message);
       await fetchMonitors();
