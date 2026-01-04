@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { Monitors } from "@/lib/types/database/monitors";
+import axios from "axios";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 
 const INITIAL_MONITOR = {
@@ -58,6 +59,24 @@ const page = () => {
     [fetchMonitors]
   );
 
+  const handlePause = useCallback(async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from("monitors")
+        .update({
+          is_paused: status,
+        })
+        .eq("id", id);
+      await fetchMonitors();
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      alert("Error updating status");
+      console.error(error);
+    }
+  }, []);
+
   const handleEditMonitor = useCallback(async () => {
     try {
       const { error } = await supabase
@@ -75,6 +94,18 @@ const page = () => {
       console.log(error);
     }
   }, [monitorAdd, fetchMonitors]);
+
+  const handleCheckStatus = useCallback(async () => {
+    try {
+      const res = await axios.post("/api/worker/checks");
+      console.log(res.data);
+      alert(res.data.message);
+      await fetchMonitors();
+    } catch (error) {
+      alert("error checking status");
+      console.log(error);
+    }
+  }, []);
 
   const handleAddMonitor = useCallback(async () => {
     try {
@@ -116,6 +147,7 @@ const page = () => {
     <div className="flex  gap-12 justify-around items-start m-10">
       <div className="flex flex-col gap-2 items-start">
         <Button onClick={() => fetchMonitors()}>Sync</Button>
+        <Button onClick={() => handleCheckStatus()}>Check Status</Button>
         <h2 className="font-bold text-2xl mb-4">Monitors</h2>
         <div className="flex flex-col p-4 gap-5">
           {monitors.map((monitor) => (
@@ -126,13 +158,26 @@ const page = () => {
                 <p>Url: {monitor.url}</p>
                 <p>Timeout: {monitor.timeout_seconds}</p>
                 <p>Interval: {monitor.interval_seconds}</p>
+                <p>Is Paused: {monitor.is_paused ? "True" : "False"}</p>
                 <p>
-                  Last Checked:{" "}
-                  {new Date(monitor.last_checked_at).toISOString()}
+                  Last Checked: {new Date(monitor.last_checked_at).toString()}
                 </p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleDelete(monitor.id)}>Delete</Button>
+                <div className="flex justify-center gap-4">
+                  <Button onClick={() => handleDelete(monitor.id)}>
+                    Delete
+                  </Button>
+                  {monitor.is_paused ? (
+                    <Button onClick={() => handlePause(monitor.id, "false")}>
+                      Contiue
+                    </Button>
+                  ) : (
+                    <Button onClick={() => handlePause(monitor.id, "true")}>
+                      Pause
+                    </Button>
+                  )}
+                </div>
               </CardFooter>
             </Card>
           ))}
@@ -157,6 +202,7 @@ const page = () => {
           />
           <Label>URL</Label>
           <Input
+            type="url"
             value={monitorAdd.url}
             onChange={(e) =>
               setMonitorAdd((prev) => ({ ...prev, url: e.target.value }))
@@ -184,6 +230,7 @@ const page = () => {
               }))
             }
           />
+
           <div className="flex justify-center gap-2 w-full">
             <Button onClick={() => handleAddMonitor()}>Add Monitor</Button>
             <Button onClick={() => handleEditMonitor()}>Edit Monitor</Button>
