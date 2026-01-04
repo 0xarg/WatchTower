@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { Monitors } from "@/lib/types/database/monitors";
 import axios from "axios";
-import { headers } from "next/headers";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 
 const INITIAL_MONITOR = {
