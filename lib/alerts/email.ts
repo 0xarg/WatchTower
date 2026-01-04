@@ -19,7 +19,7 @@ export async function sendEmailAlert(params: {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "WatchTower <no-reply@send.anuragx.dev",
+      from: "WatchTower <no-reply@anuragx.dev>",
       to: [email],
       subject,
       react: EmailTemplate({ message, monitorName, monitorUrl }),
