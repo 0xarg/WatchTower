@@ -1,4 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { Monitors } from "@/lib/types/database/monitors";
+import axios from "axios";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -6,6 +8,7 @@ export async function POST() {
     .from("monitors")
     .select("*")
     .eq("is_paused", false);
+
   if (error) {
     console.error(error);
     return NextResponse.json(
@@ -49,7 +52,44 @@ export async function POST() {
       );
       continue;
     }
+
     claimedMonitor++;
+    const axiosClient = axios.create({
+      timeout: monitor.timeout_seconds * 1000,
+      validateStatus: () => true,
+    });
+
+    const start = Date.now();
+    try {
+      const res = await axiosClient.get(monitor.url);
+      const responseTime = Date.now() - start;
+      const isUp = res.status < 400;
+      await supabaseAdmin.from("check_results").insert({
+        monitor_id: monitor.id,
+        status: isUp ? "up" : "down",
+        status_code: res.status,
+        response_time_ms: responseTime,
+        error: isUp ? null : `HTTP ${res.status}`,
+      });
+    } catch (error: unknown) {
+      const responseTime = Date.now() - start;
+      let errorMessage = "Unknown error";
+
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          errorMessage = "Timeout";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      await supabaseAdmin.from("check_results").insert({
+        monitor_id: monitor.id,
+        status: "down",
+        status_code: null,
+        response_time_ms: responseTime,
+        error: errorMessage,
+      });
+    }
   }
 
   return NextResponse.json({
