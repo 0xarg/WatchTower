@@ -1,0 +1,16 @@
+name: WatchTower Cron
+
+on:
+  schedule:
+    -cron: "*/1 * * * *" #every 1 minute
+
+  workflow_dispatch:
+
+  jobs:
+    run-worker:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Trigger WatchTower worker
+          run: |
+            curl -X POST "${{secrets.WATCHTOWER_WORKER_URL}}" \
+            -H "x-watchtower-secret: ${{secrets.WORKER_SECRET}}"

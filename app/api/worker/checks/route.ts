@@ -2,9 +2,16 @@ import { sendEmailAlert } from "@/lib/alerts/email";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Monitors } from "@/lib/types/database/monitors";
 import axios from "axios";
-import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const secret = req.headers.get("x-watchtower-secret");
+
+  if (secret !== process.env.WORKER_SECRET) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  }
+
   const { data: monitors, error } = await supabaseAdmin
     .from("monitors")
     .select("*")
