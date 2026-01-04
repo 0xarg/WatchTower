@@ -1,6 +1,8 @@
+import { sendEmailAlert } from "@/lib/alerts/email";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Monitors } from "@/lib/types/database/monitors";
 import axios from "axios";
+import { channel } from "diagnostics_channel";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -113,11 +115,50 @@ export async function POST() {
       recentChecks.every((c) => c.status === "down");
 
     if (allDown && !openIncident) {
-      await supabaseAdmin.from("incidents").insert({
-        monitor_id: monitor.id,
-        started_at: new Date().toISOString(),
-        is_open: true,
-      });
+      const { data: incident } = await supabaseAdmin
+        .from("incidents")
+        .insert({
+          monitor_id: monitor.id,
+          started_at: new Date().toISOString(),
+          is_open: true,
+        })
+        .select("*")
+        .single();
+      if (incident) {
+        const { data: user, error: userError } =
+          await supabaseAdmin.auth.admin.getUserById(monitor.user_id);
+        if (userError || !user || !user.user.email) {
+          console.error("Failed to fetch user email", userError);
+          continue;
+        }
+        const email = user.user.email;
+        const { data: existingAlert } = await supabaseAdmin
+          .from("alerts")
+          .select("*")
+          .eq("incident_id", incident.id)
+          .maybeSingle();
+
+        if (!existingAlert) {
+          try {
+            const results = await sendEmailAlert({
+              message: "Your application is down, please take action",
+              email,
+              monitorName: monitor.name,
+              monitorUrl: monitor.url,
+              subject: `${monitor.name} is DOWN`,
+            });
+            await supabaseAdmin.from("alerts").insert({
+              incident_id: incident.id,
+              channel: "email",
+              success: results.success,
+            });
+            console.log("Mail req sent!");
+          } catch (error) {
+            console.error("Error sending email", error);
+            continue;
+          }
+        }
+      }
     }
 
     if (
@@ -125,13 +166,44 @@ export async function POST() {
       recentChecks.length > 0 &&
       recentChecks[0].status === "up"
     ) {
-      await supabaseAdmin
+      const { data: resolvedIncident } = await supabaseAdmin
         .from("incidents")
         .update({
           is_open: false,
           resolved_at: new Date().toISOString(),
         })
-        .eq("id", openIncident.id);
+        .eq("id", openIncident.id)
+        .select("*")
+        .single();
+
+      if (resolvedIncident) {
+        const { data: user, error: userError } =
+          await supabaseAdmin.auth.admin.getUserById(monitor.user_id);
+        if (userError || !user || !user.user.email) {
+          console.error("Failed to fetch user email", userError);
+          continue;
+        }
+
+        const email = user.user.email;
+        try {
+          const results = await sendEmailAlert({
+            message: "Your application is now UP, don't worry",
+            email,
+            monitorName: monitor.name,
+            monitorUrl: monitor.url,
+            subject: `${monitor.name} is now UP`,
+          });
+          await supabaseAdmin.from("alerts").insert({
+            incident_id: resolvedIncident.id,
+            channel: "email",
+            success: results.success,
+          });
+          console.log("Resolved email req sent!");
+        } catch (error) {
+          console.error("Failed to sent resolved mail", error);
+          continue;
+        }
+      }
     }
   }
 
