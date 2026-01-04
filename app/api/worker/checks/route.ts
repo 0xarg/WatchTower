@@ -41,7 +41,7 @@ export async function POST() {
     if (monitor.last_checked_at) {
       query = query.eq("last_checked_at", monitor.last_checked_at);
     } else {
-      query.is("last_checked_at", null);
+      query = query.is("last_checked_at", null);
     }
 
     const { error: claimError, data: claimed } = await query.select("id");
@@ -89,6 +89,49 @@ export async function POST() {
         response_time_ms: responseTime,
         error: errorMessage,
       });
+    }
+
+    const { data: recentChecks } = await supabaseAdmin
+      .from("check_results")
+      .select("status")
+      .eq("monitor_id", monitor.id)
+      .order("created_at", { ascending: false })
+      .limit(2);
+    const { data: openIncident } = await supabaseAdmin
+      .from("incidents")
+      .select("*")
+      .eq("monitor_id", monitor.id)
+      .eq("is_open", true)
+      .maybeSingle();
+
+    if (!recentChecks) {
+      continue;
+    }
+
+    const allDown =
+      recentChecks.length === 2 &&
+      recentChecks.every((c) => c.status === "down");
+
+    if (allDown && !openIncident) {
+      await supabaseAdmin.from("incidents").insert({
+        monitor_id: monitor.id,
+        started_at: new Date().toISOString(),
+        is_open: true,
+      });
+    }
+
+    if (
+      openIncident &&
+      recentChecks.length > 0 &&
+      recentChecks[0].status === "up"
+    ) {
+      await supabaseAdmin
+        .from("incidents")
+        .update({
+          is_open: false,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq("id", openIncident.id);
     }
   }
 
