@@ -1,6 +1,6 @@
 import { sendEmailAlert } from "@/lib/alerts/email";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Monitors } from "@/lib/types/database/monitors";
+import { MonitorDB } from "@/lib/types/database/monitors";
 import axios from "axios";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
