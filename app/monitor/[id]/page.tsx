@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { MonitorDetail } from "@/lib/types/ui/monitorDetail";
 
 // Mock data
 const mockMonitor = {
@@ -38,7 +40,7 @@ const mockMonitor = {
   isPaused: false,
 };
 
-const mockChecks = [
+const mockChecxks = [
   {
     id: "1",
     time: "2 min ago",
@@ -122,32 +124,86 @@ const mockIncidents = [
   },
 ];
 
-export default function MonitorDetail() {
+type PageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export default function MonitorDetails({ params }: PageProps) {
   const router = useRouter();
-  const [monitor, setMonitor] = useState(mockMonitor);
+  const [monitor, setMonitor] = useState<MonitorDetail>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editName, setEditName] = useState(monitor.name);
-  const [editUrl, setEditUrl] = useState(monitor.url);
-  const [editInterval, setEditInterval] = useState(monitor.interval);
+  const [editName, setEditName] = useState(monitor?.name);
+  const [editUrl, setEditUrl] = useState(monitor?.url);
+  const [editInterval, setEditInterval] = useState(monitor?.interval_seconds);
+  const supabase = createClient();
 
-  const handleTogglePause = () => {
-    setMonitor((prev) => ({ ...prev, isPaused: !prev.isPaused }));
-  };
+  const loadData = useCallback(async () => {
+    const { id } = await params;
+    try {
+      const { data, error } = await supabase
+        .from("monitors")
+        .select(
+          `*,
+    check_results (
+      id,
+      status,
+      status_code,
+      response_time_ms,
+      created_at
+    ),
+    incidents (
+      id,
+      started_at,
+      resolved_at,
+      is_open,
+      alerts (
+        id,
+        channel,
+        sent_at
+      )
+    )`
+        )
+        .eq("id", id) // Replace with actual ID
+        .order("created_at", {
+          referencedTable: "check_results",
+          ascending: false,
+        })
+
+        .limit(50, { foreignTable: "check_results" }) // vital for performance!
+        .single();
+
+      console.log(data);
+      setMonitor(data);
+      if (error) throw error;
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
+  // const handleTogglePause = () => {
+  //   setMonitor((prev) => ({ ...prev, isPaused: !prev?.is_paused }));
+  // };
 
   const handleDelete = () => {
     router.push("/dashboard");
   };
 
-  const handleEdit = () => {
-    setMonitor((prev) => ({
-      ...prev,
-      name: editName,
-      url: editUrl,
-      interval: editInterval,
-    }));
-    setEditDialogOpen(false);
-  };
+  // const handleEdit = () => {
+  //   setMonitor((prev) => ({
+  //     ...prev,
+  //     name: editName,
+  //     url: editUrl,
+  //     interval: editInterval,
+  //   }));
+  //   setEditDialogOpen(false);
+  // };
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   return (
     <MainLayout>
@@ -169,34 +225,38 @@ export default function MonitorDetail() {
                   <div
                     className={cn(
                       "h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full shrink-0",
-                      monitor.status === "up"
+                      monitor?.check_results[0].status! === "up"
                         ? "bg-success pulse-dot"
                         : "bg-destructive pulse-dot"
                     )}
                   />
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight truncate">
-                    {monitor.name}
+                    {monitor?.name}
                   </h1>
                   <Badge
-                    variant={monitor.status === "up" ? "up" : "down"}
+                    variant={
+                      monitor?.check_results[0].status! === "up" ? "up" : "down"
+                    }
                     className="shrink-0"
                   >
-                    {monitor.status === "up" ? "Operational" : "Down"}
+                    {monitor?.check_results[0].status! === "up"
+                      ? "Operational"
+                      : "Down"}
                   </Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-muted-foreground">
                   <a
-                    href={monitor.url}
+                    href={monitor?.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 hover:text-foreground transition-colors truncate max-w-[200px] sm:max-w-none"
                   >
-                    <span className="truncate">{monitor.url}</span>
+                    <span className="truncate">{monitor?.url}</span>
                     <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                   </a>
                   <span className="flex items-center gap-1.5 shrink-0">
                     <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    Every {monitor.interval}s
+                    Every {monitor?.interval_seconds}s
                   </span>
                 </div>
               </div>
@@ -205,11 +265,11 @@ export default function MonitorDetail() {
             <div className="flex items-center gap-2 ml-10 sm:ml-0">
               <Button
                 variant="outline"
-                onClick={handleTogglePause}
+                // onClick={handleTogglePause}
                 className="gap-2 rounded-xl text-xs sm:text-sm"
                 size="sm"
               >
-                {monitor.isPaused ? (
+                {monitor?.is_paused ? (
                   <>
                     <Play className="h-4 w-4" />
                     <span className="hidden sm:inline">Resume</span>
@@ -282,7 +342,7 @@ export default function MonitorDetail() {
                       Cancel
                     </Button>
                     <Button
-                      onClick={handleEdit}
+                      // onClick={handleEdit}
                       className="rounded-xl w-full sm:w-auto"
                     >
                       Save Changes
@@ -342,11 +402,11 @@ export default function MonitorDetail() {
 
           {/* Mobile Cards */}
           <div className="sm:hidden space-y-3">
-            {mockChecks.slice(0, 5).map((check) => (
+            {monitor?.check_results.slice(0, 5).map((check) => (
               <div key={check.id} className="floating-card p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">
-                    {check.time}
+                    {check.created_at}
                   </span>
                   {check.status === "up" ? (
                     <CheckCircle2 className="h-5 w-5 text-success" />
@@ -356,12 +416,16 @@ export default function MonitorDetail() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <Badge
-                    variant={check.httpCode === 200 ? "success" : "destructive"}
+                    variant={
+                      check.status_code === 200 ? "success" : "destructive"
+                    }
                   >
-                    {check.httpCode}
+                    {check.status_code}
                   </Badge>
                   <span className="font-medium">
-                    {check.responseTime > 0 ? `${check.responseTime}ms` : "—"}
+                    {check.response_time_ms > 0
+                      ? `${check.response_time_ms}ms`
+                      : "—"}
                   </span>
                 </div>
                 {check.error && (
@@ -395,13 +459,13 @@ export default function MonitorDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {mockChecks.map((check) => (
+                  {monitor?.check_results.map((check) => (
                     <tr
                       key={check.id}
                       className="hover:bg-secondary/30 transition-colors"
                     >
                       <td className="px-4 sm:px-5 py-4 text-sm">
-                        {check.time}
+                        {check.created_at}
                       </td>
                       <td className="px-4 sm:px-5 py-4">
                         {check.status === "up" ? (
@@ -413,15 +477,17 @@ export default function MonitorDetail() {
                       <td className="px-4 sm:px-5 py-4">
                         <Badge
                           variant={
-                            check.httpCode === 200 ? "success" : "destructive"
+                            check.status_code === 200
+                              ? "success"
+                              : "destructive"
                           }
                         >
-                          {check.httpCode}
+                          {check.status_code}
                         </Badge>
                       </td>
                       <td className="px-4 sm:px-5 py-4 text-sm font-medium">
-                        {check.responseTime > 0
-                          ? `${check.responseTime}ms`
+                        {check.response_time_ms > 0
+                          ? `${check.response_time_ms}ms`
                           : "—"}
                       </td>
                       <td className="px-4 sm:px-5 py-4 text-sm text-muted-foreground">
@@ -443,26 +509,22 @@ export default function MonitorDetail() {
 
           {/* Mobile Cards */}
           <div className="sm:hidden space-y-3">
-            {mockIncidents.map((incident) => (
+            {monitor?.incidents.map((incident) => (
               <div key={incident.id} className="floating-card p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <Badge
-                    variant={incident.status === "open" ? "open" : "resolved"}
-                  >
-                    {incident.status === "open" ? "Open" : "Resolved"}
+                  <Badge variant={incident.is_open ? "open" : "resolved"}>
+                    {incident.is_open ? "Open" : "Resolved"}
                   </Badge>
-                  <span className="text-sm font-medium">
-                    {incident.duration}
-                  </span>
+                  <span className="text-sm font-medium">{3}</span>
                 </div>
                 <div className="space-y-1.5 text-xs text-muted-foreground">
                   <div className="flex justify-between">
                     <span>Started:</span>
-                    <span>{incident.startedAt}</span>
+                    <span>{incident.started_at}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Resolved:</span>
-                    <span>{incident.resolvedAt || "—"}</span>
+                    <span>{incident.resolved_at || "—"}</span>
                   </div>
                 </div>
               </div>
@@ -490,28 +552,24 @@ export default function MonitorDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {mockIncidents.map((incident) => (
+                  {monitor?.incidents.map((incident) => (
                     <tr
                       key={incident.id}
                       className="hover:bg-secondary/30 transition-colors"
                     >
                       <td className="px-4 sm:px-5 py-4">
-                        <Badge
-                          variant={
-                            incident.status === "open" ? "open" : "resolved"
-                          }
-                        >
-                          {incident.status === "open" ? "Open" : "Resolved"}
+                        <Badge variant={incident.is_open ? "open" : "resolved"}>
+                          {incident.is_open ? "Open" : "Resolved"}
                         </Badge>
                       </td>
                       <td className="px-4 sm:px-5 py-4 text-sm">
-                        {incident.startedAt}
+                        {incident.started_at}
                       </td>
                       <td className="px-4 sm:px-5 py-4 text-sm">
-                        {incident.resolvedAt || "—"}
+                        {incident.resolved_at || "—"}
                       </td>
                       <td className="px-4 sm:px-5 py-4 text-sm font-medium">
-                        {incident.duration}
+                        {3}
                       </td>
                     </tr>
                   ))}
