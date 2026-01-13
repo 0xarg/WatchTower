@@ -189,7 +189,10 @@ export default function MonitorDetails({ params }: PageProps) {
   const handleDelete = useCallback(
     async (id: string) => {
       try {
-        const { error } = await supabase.from("monitors").delete().eq("id", id);
+        const { error } = await supabase
+          .from("monitors")
+          .delete()
+          .eq("id", monitor?.id);
         if (error) {
           throw error;
         }

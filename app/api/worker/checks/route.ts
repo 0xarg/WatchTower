@@ -233,7 +233,7 @@ export async function POST(req: NextRequest) {
               email,
               monitorName: monitor.name,
               monitorUrl: monitor.url,
-              status: isUp ? "up" : "down",
+              status: recentChecks[0].status,
               startedAt: openIncident.started_at,
             });
             await supabaseAdmin.from("alerts").insert({

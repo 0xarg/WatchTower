@@ -22,9 +22,9 @@ export async function sendEmailAlert(params: {
   try {
     let subject;
     if (status === "down") {
-      subject = `🔴 WatchTower Alert: ${monitorName} is DOWN`;
+      subject = ` WatchTower Alert: ${monitorName} is DOWN`;
     } else if (status === "up") {
-      subject = `🟢 WatchTower: ${monitorName} is UP`;
+      subject = ` WatchTower: ${monitorName} is UP`;
     } else {
       subject = `WatchTower: ${monitorName} status update`;
     }
