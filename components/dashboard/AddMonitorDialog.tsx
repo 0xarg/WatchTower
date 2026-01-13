@@ -103,6 +103,7 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
     e.preventDefault();
 
     const { valid, normalized } = validateAndNormalize();
+    console.log(normalized);
     if (!valid) return;
 
     try {
@@ -110,7 +111,6 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser();
-      // console.log(monitorAdd);
       if (!user || userError) {
         alert("not auhtenticated");
         throw new Error("Not authenticated");
