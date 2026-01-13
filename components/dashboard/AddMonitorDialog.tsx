@@ -103,6 +103,9 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
     async (e: React.FormEvent) => {
       e.preventDefault();
 
+      console.log(name);
+      console.log(url);
+
       const { valid, normalized } = validateAndNormalize();
       console.log(normalized);
       if (!valid) return;
