@@ -99,52 +99,55 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
     };
   };
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const { valid, normalized } = validateAndNormalize();
-    console.log(normalized);
-    if (!valid) return;
+      const { valid, normalized } = validateAndNormalize();
+      console.log(normalized);
+      if (!valid) return;
 
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (!user || userError) {
-        alert("not auhtenticated");
-        throw new Error("Not authenticated");
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (!user || userError) {
+          alert("not auhtenticated");
+          throw new Error("Not authenticated");
+        }
+        const { error } = await supabase.from("monitors").insert({
+          user_id: user.id,
+          name: normalized.name,
+          url: normalized.url,
+          interval_seconds: interval,
+          timeout_seconds: timeout,
+          is_paused: isPaused,
+        });
+        if (error) {
+          throw error;
+        }
+      } catch (error) {
+        alert("Error creating monitor");
+        console.log(error);
       }
-      const { error } = await supabase.from("monitors").insert({
-        user_id: user.id,
+
+      onAdd({
         name: normalized.name,
         url: normalized.url,
-        interval_seconds: interval,
-        timeout_seconds: timeout,
-        is_paused: isPaused,
+        interval,
+        timeout,
+        isPaused,
       });
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      alert("Error creating monitor");
-      console.log(error);
-    }
-
-    onAdd({
-      name: normalized.name,
-      url: normalized.url,
-      interval,
-      timeout,
-      isPaused,
-    });
-    setOpen(false);
-    setName("");
-    setUrl("");
-    setInterval(60);
-    setTimeout(30);
-    setIsPaused(false);
-  }, []);
+      setOpen(false);
+      setName("");
+      setUrl("");
+      setInterval(60);
+      setTimeout(30);
+      setIsPaused(false);
+    },
+    [name, url, interval, timeout, isPaused, supabase]
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
