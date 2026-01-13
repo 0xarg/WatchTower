@@ -71,7 +71,10 @@ export default function Settings() {
             <Button
               variant="outline"
               className="gap-2 rounded-xl text-destructive hover:bg-destructive hover:text-destructive-foreground w-full sm:w-auto"
-              onClick={() => supabase.auth.signOut()}
+              onClick={() => {
+                supabase.auth.signOut();
+                router.push("/");
+              }}
             >
               <LogOut className="h-4 w-4" />
               Sign Out

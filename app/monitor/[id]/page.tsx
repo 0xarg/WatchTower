@@ -186,14 +186,55 @@ export default function MonitorDetails({ params }: PageProps) {
       setIsloading(false);
     }
   }, []);
-
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        const { error } = await supabase.from("monitors").delete().eq("id", id);
+        if (error) {
+          throw error;
+        }
+        await loadData();
+      } catch (error) {
+        alert("Error deleting monitor");
+        console.log(error);
+      }
+    },
+    [loadData]
+  );
+  const handlePauseToggle = useCallback(async (status: boolean) => {
+    const isPaused = !status;
+    if (!monitor) {
+      return;
+    }
+    setMonitor((prev) => (prev ? { ...prev, is_paused: isPaused } : prev));
+    console.log(isPaused);
+    try {
+      const { data, error } = await supabase
+        .from("monitors")
+        .update({
+          is_paused: isPaused,
+        })
+        .eq("id", monitor.id)
+        .select();
+      console.log(data);
+      if (error) {
+        throw error;
+      }
+      if (data[0].is_paused !== isPaused) throw Error;
+    } catch (error) {
+      console.log(error);
+      setMonitor((prev) =>
+        prev ? { ...prev, is_paused: !prev.is_paused } : prev
+      );
+    }
+  }, []);
   // const handleTogglePause = () => {
   //   setMonitor((prev) => ({ ...prev, isPaused: !prev?.is_paused }));
   // };
 
-  const handleDelete = () => {
-    router.push("/dashboard");
-  };
+  // const handleDelete = () => {
+  //   router.push("/dashboard");
+  // };
 
   // const handleEdit = () => {
   //   setMonitor((prev) => ({
@@ -273,7 +314,7 @@ export default function MonitorDetails({ params }: PageProps) {
             <div className="flex items-center gap-2 ml-10 sm:ml-0">
               <Button
                 variant="outline"
-                // onClick={handleTogglePause}
+                onClick={() => handlePauseToggle(monitor?.is_paused!)}
                 className="gap-2 rounded-xl text-xs sm:text-sm"
                 size="sm"
               >
@@ -390,7 +431,7 @@ export default function MonitorDetails({ params }: PageProps) {
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={handleDelete}
+                      onClick={() => handleDelete}
                       className="rounded-xl w-full sm:w-auto"
                     >
                       Delete

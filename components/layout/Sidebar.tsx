@@ -35,6 +35,7 @@ export function Sidebar() {
   const handleSignOut = useCallback(async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    router.push("/");
   }, []);
 
   return (

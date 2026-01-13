@@ -88,22 +88,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        const { error } = await supabase.from("monitors").delete().eq("id", id);
-        if (error) {
-          throw error;
-        }
-        await fetchMonitors();
-      } catch (error) {
-        alert("Error deleting monitor");
-        console.log(error);
-      }
-    },
-    [fetchMonitors]
-  );
-
   const handlePause = useCallback(async (id: string, status: string) => {
     try {
       const { error } = await supabase
