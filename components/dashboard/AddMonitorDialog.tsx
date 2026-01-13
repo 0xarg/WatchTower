@@ -56,13 +56,60 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  const validateAndNormalize = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Name validation
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      newErrors.name = "Name is required";
+    } else if (trimmedName.length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+    // URL validation + normalization
+    let normalizedUrl = "";
+    try {
+      const parsed = new URL(url.trim());
+
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        newErrors.url = "URL must start with http:// or https://";
+      } else {
+        // Normalize: remove trailing slash
+        normalizedUrl = parsed.origin + parsed.pathname.replace(/\/$/, "");
+      }
+    } catch {
+      newErrors.url = "Please enter a valid URL";
+    }
+
+    // Interval sanity
+    if (interval < 60) {
+      newErrors.interval = "Interval must be at least 60 seconds";
+    }
+
+    // Timeout sanity (strongly recommended)
+    if (timeout <= 0) {
+      newErrors.timeout = "Timeout must be greater than 0";
+    } else if (timeout >= interval) {
+      newErrors.timeout = "Timeout must be less than interval";
+    }
+
+    setErrors(newErrors);
+
+    return {
+      valid: Object.keys(newErrors).length === 0,
+      normalized: {
+        name: trimmedName,
+        url: normalizedUrl,
+      },
+    };
+  };
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log(name);
-    console.log(url);
-    // if (!validate()) return;
+    const { valid, normalized } = validateAndNormalize();
+    if (!valid) return;
 
     try {
       const {
@@ -76,8 +123,8 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
       }
       const { error } = await supabase.from("monitors").insert({
         user_id: user.id,
-        name: name,
-        url: url,
+        name: normalized.name,
+        url: normalized.url,
         interval_seconds: interval,
         timeout_seconds: timeout,
         is_paused: isPaused,
@@ -90,7 +137,13 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
       console.log(error);
     }
 
-    onAdd({ name, url, interval, timeout, isPaused });
+    onAdd({
+      name: normalized.name,
+      url: normalized.url,
+      interval,
+      timeout,
+      isPaused,
+    });
     setOpen(false);
     setName("");
     setUrl("");
