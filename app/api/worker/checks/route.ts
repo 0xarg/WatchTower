@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+  let isUp;
   const secret = req.headers.get("x-watchtower-secret");
 
   if (secret !== process.env.WORKER_SECRET) {
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
         timeout: monitor.timeout_seconds * 1000,
       });
       const responseTime = Date.now() - start;
-      const isUp = res.status < 400;
+      isUp = res.status < 400;
       await supabaseAdmin.from("check_results").insert({
         monitor_id: monitor.id,
         status: isUp ? "up" : "down",
@@ -154,7 +155,8 @@ export async function POST(req: NextRequest) {
               email,
               monitorName: monitor.name,
               monitorUrl: monitor.url,
-              subject: `${monitor.name} is DOWN`,
+              status: isUp ? "up" : "down",
+              startedAt: incident.started_at,
             });
             await supabaseAdmin.from("alerts").insert({
               incident_id: incident.id,
@@ -192,11 +194,12 @@ export async function POST(req: NextRequest) {
           const email = user.user.email;
           try {
             const results = await sendEmailAlert({
-              message: "Your application is now UP, don't worry",
+              message: "Your application is Up, don't worry",
               email,
               monitorName: monitor.name,
               monitorUrl: monitor.url,
-              subject: `${monitor.name} is now UP`,
+              status: isUp ? "up" : "down",
+              startedAt: openIncident.started_at,
             });
             await supabaseAdmin.from("alerts").insert({
               incident_id: resolvedIncident.id,
@@ -230,7 +233,8 @@ export async function POST(req: NextRequest) {
               email,
               monitorName: monitor.name,
               monitorUrl: monitor.url,
-              subject: `${monitor.name} is DOWN`,
+              status: isUp ? "up" : "down",
+              startedAt: openIncident.started_at,
             });
             await supabaseAdmin.from("alerts").insert({
               incident_id: openIncident.id,

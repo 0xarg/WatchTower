@@ -9,22 +9,24 @@ export function AnimatedLogo({ className, size = "md" }: AnimatedLogoProps) {
   const sizes = {
     sm: "h-8 w-8",
     md: "h-9 w-9",
-    lg: "h-14 w-14"
+    lg: "h-14 w-14",
   };
 
   const pathSizes = {
     sm: { height: 16, viewBox: "0 0 32 16" },
     md: { height: 18, viewBox: "0 0 36 18" },
-    lg: { height: 28, viewBox: "0 0 56 28" }
+    lg: { height: 28, viewBox: "0 0 56 28" },
   };
 
   return (
-    <div className={cn(
-      "flex items-center justify-center rounded-xl bg-foreground shadow-lg overflow-hidden",
-      sizes[size],
-      className
-    )}>
-      <svg 
+    <div
+      className={cn(
+        "flex items-center justify-center rounded-xl bg-foreground shadow-lg overflow-hidden",
+        sizes[size],
+        className
+      )}
+    >
+      <svg
         viewBox={pathSizes[size].viewBox}
         className="heartbeat-line"
         style={{ height: pathSizes[size].height }}

@@ -1,14 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SyncButton } from "@/components/SyncButton";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { IncidentUI } from "@/lib/types/ui/incidentDetail";
+import { formatDistanceToNow } from "date-fns";
 
 type FilterType = "all" | "open" | "resolved";
 
-const mockIncidents = [
+const mocksIncidents = [
   {
     id: "1",
     monitor: "Documentation",
@@ -52,17 +55,41 @@ const mockIncidents = [
 ];
 
 export default function Incidents() {
+  const supabase = createClient();
+  const [incidents, setIncidents] = useState<IncidentUI[]>();
   const [filter, setFilter] = useState<FilterType>("all");
 
-  const filteredIncidents = mockIncidents.filter((incident) => {
+  const filteredIncidents = incidents?.filter((incident) => {
     if (filter === "all") return true;
-    return incident.status === filter;
+    const status = incident.is_open ? "open" : "resolved";
+    return status === filter;
   });
 
-  const openCount = mockIncidents.filter((i) => i.status === "open").length;
-  const resolvedCount = mockIncidents.filter(
-    (i) => i.status === "resolved"
-  ).length;
+  const openCount = incidents?.filter((i) => i.is_open).length;
+  const resolvedCount = incidents?.filter((i) => !i.is_open).length;
+
+  const fetchIncidents = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("incidents")
+        .select(
+          `*,monitors(
+        id,name,url)`
+        )
+        .order("started_at", { ascending: false });
+      console.log(data);
+      setIncidents(data as IncidentUI[]);
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
 
   return (
     <MainLayout>
@@ -92,7 +119,7 @@ export default function Incidents() {
           >
             All
             <span className="text-xs opacity-70 bg-background/20 px-1.5 py-0.5 rounded-full">
-              {mockIncidents.length}
+              {incidents?.length}
             </span>
           </Button>
           <Button
@@ -121,38 +148,38 @@ export default function Incidents() {
 
         {/* Mobile Cards View */}
         <div className="sm:hidden space-y-3 animate-fade-up opacity-0 delay-200">
-          {filteredIncidents.map((incident, index) => (
+          {filteredIncidents?.map((incident, index) => (
             <div
               key={incident.id}
               className="floating-card p-4 animate-fade-up opacity-0"
               style={{ animationDelay: `${200 + index * 50}ms` }}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="font-medium text-sm">{incident.monitor}</span>
-                <Badge
-                  variant={incident.status === "open" ? "open" : "resolved"}
-                >
-                  {incident.status === "open" ? "Open" : "Resolved"}
+                <span className="font-medium text-sm">
+                  {incident.monitors.name}
+                </span>
+                <Badge variant={incident.is_open ? "open" : "resolved"}>
+                  {incident.is_open ? "Open" : "Resolved"}
                 </Badge>
               </div>
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex justify-between">
                   <span>Started:</span>
-                  <span>{incident.startedAt}</span>
+                  <span>{incident.started_at}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Resolved:</span>
-                  <span>{incident.resolvedAt || "—"}</span>
+                  <span>{incident.resolved_at || "—"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Duration:</span>
                   <span
                     className={cn(
                       "font-medium",
-                      incident.status === "open" && "text-warning"
+                      incident.is_open && "text-warning"
                     )}
                   >
-                    {incident.duration}
+                    {"15 min"}
                   </span>
                 </div>
               </div>
@@ -184,7 +211,7 @@ export default function Incidents() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filteredIncidents.map((incident, index) => (
+                {filteredIncidents?.map((incident, index) => (
                   <tr
                     key={incident.id}
                     className={cn(
@@ -195,32 +222,34 @@ export default function Incidents() {
                   >
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
                       <span className="font-medium text-sm">
-                        {incident.monitor}
+                        {incident.monitors.name}
                       </span>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
-                      <Badge
-                        variant={
-                          incident.status === "open" ? "open" : "resolved"
-                        }
-                      >
-                        {incident.status === "open" ? "Open" : "Resolved"}
+                      <Badge variant={incident.is_open ? "open" : "resolved"}>
+                        {incident.is_open ? "Open" : "Resolved"}
                       </Badge>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5 text-sm text-muted-foreground">
-                      {incident.startedAt}
+                      {formatDistanceToNow(new Date(incident.started_at), {
+                        addSuffix: true,
+                      })}
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5 text-sm text-muted-foreground">
-                      {incident.resolvedAt || "—"}
+                      {incident.resolved_at
+                        ? formatDistanceToNow(new Date(incident.resolved_at), {
+                            addSuffix: true,
+                          })
+                        : "--"}
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
                       <span
                         className={cn(
                           "text-sm font-medium",
-                          incident.status === "open" && "text-warning"
+                          incident.is_open && "text-warning"
                         )}
                       >
-                        {incident.duration}
+                        {"15 min"}
                       </span>
                     </td>
                   </tr>
@@ -230,7 +259,7 @@ export default function Incidents() {
           </div>
         </div>
 
-        {filteredIncidents.length === 0 && (
+        {filteredIncidents?.length === 0 && (
           <div className="text-center py-12 sm:py-16 animate-fade-up opacity-0">
             <p className="text-muted-foreground">No incidents found</p>
           </div>

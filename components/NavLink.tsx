@@ -1,26 +1,35 @@
-import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
-  className?: string;
+// Next.js Link props differ slightly from React Router
+// We generally use 'href' instead of 'to' in Next.js, but I've kept 'href'
+// as the standard here.
+interface NavLinkProps extends React.ComponentPropsWithoutRef<typeof Link> {
   activeClassName?: string;
-  pendingClassName?: string;
+  className?: string;
 }
 
-const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
-  ({ className, activeClassName, pendingClassName, to, ...props }, ref) => {
+const NavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(
+  ({ className, activeClassName, href, ...props }, ref) => {
+    const pathname = usePathname();
+
+    // Check if the current path matches the link's destination
+    // You can adjust logic here if you need "starts with" matching for nested routes
+    const isActive = pathname === href;
+
     return (
-      <RouterNavLink
+      <Link
         ref={ref}
-        to={to}
-        className={({ isActive, isPending }) =>
-          cn(className, isActive && activeClassName, isPending && pendingClassName)
-        }
+        href={href}
+        className={cn(className, isActive && activeClassName)}
         {...props}
       />
     );
-  },
+  }
 );
 
 NavLink.displayName = "NavLink";

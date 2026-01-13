@@ -4,8 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { SyncButton } from "@/components/SyncButton";
 import { Mail, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { AlertUI } from "@/lib/types/ui/alertDetail";
+import { useCallback, useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 
-const mockAlertLogs = [
+const mockAelertLogs = [
   {
     id: "1",
     incident: "Documentation - Down",
@@ -58,6 +62,35 @@ const mockAlertLogs = [
 ];
 
 export default function AlertLogs() {
+  const supabase = createClient();
+  const [alerts, setAlerts] = useState<AlertUI[]>();
+
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("alerts")
+        .select(
+          `*,incidents(
+              monitors (
+              name
+              )
+            )`
+        )
+        .order("sent_at", { ascending: false });
+      console.log(data);
+      setAlerts(data as AlertUI[]);
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
   return (
     <MainLayout>
       <div className="space-y-6 sm:space-y-8 lg:space-y-10 max-w-5xl">
@@ -72,23 +105,23 @@ export default function AlertLogs() {
             </p>
           </div>
           <div className="animate-fade-up opacity-0 delay-100">
-            <SyncButton />
+            <SyncButton onSync={() => fetchAlerts()} />
           </div>
         </div>
 
         {/* Mobile Cards View */}
         <div className="sm:hidden space-y-3 animate-fade-up opacity-0 delay-100">
-          {mockAlertLogs.map((log, index) => (
+          {alerts?.map((alert, index) => (
             <div
-              key={log.id}
+              key={alert.id}
               className="floating-card p-4 animate-fade-up opacity-0"
               style={{ animationDelay: `${100 + index * 50}ms` }}
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <span className="font-medium text-sm flex-1">
-                  {log.incident}
+                  {alert.incidents.monitors.name}
                 </span>
-                {log.success ? (
+                {alert.success ? (
                   <Badge variant="success" className="gap-1 shrink-0">
                     <CheckCircle2 className="h-3 w-3" />
                     Sent
@@ -103,9 +136,9 @@ export default function AlertLogs() {
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Mail className="h-3.5 w-3.5" />
-                  <span>{log.channel}</span>
+                  <span>{alert.channel}</span>
                 </div>
-                <span>{log.sentAt}</span>
+                <span>{alert.sent_at}</span>
               </div>
             </div>
           ))}
@@ -118,7 +151,7 @@ export default function AlertLogs() {
               <thead>
                 <tr className="border-b border-border/50 bg-secondary/30">
                   <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Incident
+                    Monitor
                   </th>
                   <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Channel
@@ -132,9 +165,9 @@ export default function AlertLogs() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {mockAlertLogs.map((log, index) => (
+                {alerts?.map((alert, index) => (
                   <tr
-                    key={log.id}
+                    key={alert.id}
                     className={cn(
                       "hover:bg-secondary/30 transition-colors",
                       "animate-fade-up opacity-0"
@@ -143,7 +176,7 @@ export default function AlertLogs() {
                   >
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
                       <span className="font-medium text-sm">
-                        {log.incident}
+                        {alert.incidents.monitors.name}
                       </span>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
@@ -151,11 +184,11 @@ export default function AlertLogs() {
                         <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
                           <Mail className="h-4 w-4" />
                         </div>
-                        <span className="text-sm">{log.channel}</span>
+                        <span className="text-sm">{alert.channel}</span>
                       </div>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5">
-                      {log.success ? (
+                      {alert.success ? (
                         <Badge variant="success" className="gap-1.5">
                           <CheckCircle2 className="h-3 w-3" />
                           Sent
@@ -168,7 +201,9 @@ export default function AlertLogs() {
                       )}
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5 text-sm text-muted-foreground">
-                      {log.sentAt}
+                      {formatDistanceToNow(new Date(alert.sent_at), {
+                        addSuffix: true,
+                      })}
                     </td>
                   </tr>
                 ))}

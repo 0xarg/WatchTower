@@ -23,7 +23,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Incidents", href: "/incidents", icon: AlertTriangle },
   { name: "Alert Logs", href: "/alerts", icon: Bell },
-  { name: "Status Page", href: "/status", icon: Globe },
+  // { name: "Status Page", href: "/status", icon: Globe },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -35,7 +35,6 @@ export function Sidebar() {
   const handleSignOut = useCallback(async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
   }, []);
 
   return (

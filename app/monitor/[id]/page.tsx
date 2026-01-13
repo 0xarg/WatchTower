@@ -1,4 +1,5 @@
 "use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +134,7 @@ type PageProps = {
 export default function MonitorDetails({ params }: PageProps) {
   const router = useRouter();
   const [monitor, setMonitor] = useState<MonitorDetail>();
+  const [loading, setIsloading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState(monitor?.name);
@@ -180,6 +182,8 @@ export default function MonitorDetails({ params }: PageProps) {
       if (error) throw error;
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsloading(false);
     }
   }, []);
 
@@ -204,6 +208,10 @@ export default function MonitorDetails({ params }: PageProps) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <MainLayout>

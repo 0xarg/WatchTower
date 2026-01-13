@@ -63,6 +63,9 @@ export default function Index() {
   const scrollToFeatures = () => {
     document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
   };
+  const scrollToStats = () => {
+    document.getElementById("stats")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen bg-background page-gradient overflow-x-hidden">
@@ -80,11 +83,14 @@ export default function Index() {
             >
               Features
             </button>
-            <button className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50">
+            {/* <button className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50">
               Pricing
-            </button>
-            <button className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50">
-              Docs
+            </button> */}
+            <button
+              onClick={scrollToStats}
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary/50"
+            >
+              Stats
             </button>
           </div>
           <div className="flex items-center gap-1">
@@ -93,7 +99,7 @@ export default function Index() {
               onClick={() => router.push("/login")}
               className="rounded-full px-4 sm:px-5 h-9 btn-glow"
             >
-              <span className="hidden sm:inline">Launch App</span>
+              <span className="hidden sm:inline">Get Started</span>
               <span className="sm:hidden">Start</span>
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
@@ -153,14 +159,14 @@ export default function Index() {
               Start Monitoring
               <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button
+            {/* <Button
               size="lg"
               variant="outline"
               onClick={() => router.push("/status")}
               className="w-full sm:w-auto rounded-full px-8 h-12 text-base glass-card border-border/40 hover:bg-secondary/50"
             >
               View Demo
-            </Button>
+            </Button> */}
           </div>
 
           {/* Trust Indicators */}
@@ -183,11 +189,6 @@ export default function Index() {
           </div>
 
           {/* Scroll indicator - subtle fade animation */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2">
-            <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-2">
-              <div className="w-1 h-2 rounded-full bg-muted-foreground/50 animate-scroll-indicator" />
-            </div>
-          </div>
         </div>
       </section>
 
@@ -428,7 +429,7 @@ export default function Index() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 sm:py-20 px-4">
+      <section id="stats" className="py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="glass-card p-8 sm:p-12 animate-fade-up opacity-0">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
@@ -481,14 +482,14 @@ export default function Index() {
             >
               Get Started Free
             </Button>
-            <Button
+            {/* <Button
               size="lg"
               variant="outline"
               onClick={() => router.push("/status")}
               className="w-full sm:w-auto rounded-full px-8 h-12 text-base glass-card border-border/40"
             >
               View Status Page
-            </Button>
+            </Button> */}
           </div>
           <div
             className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8 text-sm text-muted-foreground animate-fade-up opacity-0"

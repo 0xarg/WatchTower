@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Monitors } from "@/lib/types/database/monitors";
+import { MonitorDB } from "@/lib/types/database/monitors";
 import axios from "axios";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 
@@ -27,7 +27,7 @@ export interface AddMonitor {
 }
 const page = () => {
   const supabase = createClient();
-  const [monitors, setMonitors] = useState<Monitors[]>([]);
+  const [monitors, setMonitors] = useState<MonitorDB[]>([]);
   const [monitorAdd, setMonitorAdd] = useState<AddMonitor>(INITIAL_MONITOR);
 
   const fetchMonitors = useCallback(async () => {
@@ -36,7 +36,7 @@ const page = () => {
       if (error) {
         throw error;
       }
-      setMonitors(data as Monitors[]);
+      setMonitors(data as MonitorDB[]);
     } catch (error) {
       console.log(error);
       alert("error getting monitors");

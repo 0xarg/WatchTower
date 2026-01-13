@@ -1,15 +1,35 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { User, Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { UserDB } from "@/lib/types/database/user";
 
 export default function Settings() {
   const [emailEnabled, setEmailEnabled] = useState(true);
+  const [user, setUser] = useState<UserDB>();
   const router = useRouter();
+  const supabase = createClient();
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      setUser(data.user as UserDB);
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   return (
     <MainLayout>
@@ -44,14 +64,14 @@ export default function Settings() {
                   Email
                 </Label>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  user@example.com
+                  {user?.email}
                 </p>
               </div>
             </div>
             <Button
               variant="outline"
               className="gap-2 rounded-xl text-destructive hover:bg-destructive hover:text-destructive-foreground w-full sm:w-auto"
-              onClick={() => router.push("/login")}
+              onClick={() => supabase.auth.signOut()}
             >
               <LogOut className="h-4 w-4" />
               Sign Out
