@@ -59,7 +59,6 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
   const validateAndNormalize = () => {
     const newErrors: Record<string, string> = {};
 
-    // Name validation
     const trimmedName = name.trim();
     if (!trimmedName) {
       newErrors.name = "Name is required";
@@ -67,27 +66,22 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
       newErrors.name = "Name must be at least 3 characters";
     }
 
-    // URL validation + normalization
     let normalizedUrl = "";
     try {
       const parsed = new URL(url.trim());
-
       if (!["http:", "https:"].includes(parsed.protocol)) {
         newErrors.url = "URL must start with http:// or https://";
       } else {
-        // Normalize: remove trailing slash
         normalizedUrl = parsed.origin + parsed.pathname.replace(/\/$/, "");
       }
     } catch {
       newErrors.url = "Please enter a valid URL";
     }
 
-    // Interval sanity
     if (interval < 60) {
       newErrors.interval = "Interval must be at least 60 seconds";
     }
 
-    // Timeout sanity (strongly recommended)
     if (timeout <= 0) {
       newErrors.timeout = "Timeout must be greater than 0";
     } else if (timeout >= interval) {
