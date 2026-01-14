@@ -1,11 +1,5 @@
 import MonitorClient from "./MonitorClient";
 
-type PageProps = {
-  params: {
-    id: string;
-  };
-};
-
-export default function Page({ params }: PageProps) {
+export default function Page({ params }: any) {
   return <MonitorClient id={params.id} />;
 }
