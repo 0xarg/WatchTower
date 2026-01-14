@@ -27,19 +27,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MonitorDetail } from "@/lib/types/ui/monitorDetail";
 import { Loader } from "@/components/Loader";
 import { formatDistanceToNow } from "date-fns";
 
 type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+  id: string;
 };
 
-export default function MonitorDetails({ params }: { params: { id: string } }) {
+export default function MonitorDetails({ params }: { params: PageProps }) {
   const router = useRouter();
   const [monitor, setMonitor] = useState<MonitorDetail>();
   const [loading, setIsloading] = useState(true);
@@ -49,10 +47,9 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
   const [editUrl, setEditUrl] = useState(monitor?.url);
   const [editInterval, setEditInterval] = useState(monitor?.interval_seconds);
   const supabase = createClient();
-  const pathname = usePathname();
-  const id = pathname.split("/").pop() || "";
 
   const loadData = useCallback(async () => {
+    const { id } = await params;
     console.log(id);
     if (!id) {
       return;
@@ -100,7 +97,9 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
   }, [supabase, params]);
   const handleDelete = useCallback(async () => {
     const { id } = await params;
-
+    if (!id) {
+      return;
+    }
     try {
       const { error } = await supabase.from("monitors").delete().eq("id", id);
       if (error) {
@@ -111,7 +110,7 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
       alert("Error deleting monitor");
       console.log(error);
     }
-  }, [loadData]);
+  }, [loadData, params]);
 
   const handleEditMonitor = useCallback(async () => {
     if (!monitor) {
@@ -166,7 +165,6 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
   }, []);
 
   useEffect(() => {
-    router.refresh();
     loadData();
   }, [loadData]);
 
