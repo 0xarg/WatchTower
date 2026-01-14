@@ -88,7 +88,6 @@ export default function MonitorDetails({ params }: PageProps) {
         .limit(50, { foreignTable: "check_results" }) // vital for performance!
         .single();
 
-      console.log(data);
       setMonitor(data);
       if (error) throw error;
     } catch (error) {
@@ -96,7 +95,7 @@ export default function MonitorDetails({ params }: PageProps) {
     } finally {
       setIsloading(false);
     }
-  }, []);
+  }, [supabase, params]);
   const handleDelete = useCallback(async () => {
     const { id } = await params;
 
