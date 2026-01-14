@@ -39,7 +39,7 @@ type PageProps = {
   }>;
 };
 
-export default function MonitorDetails({ params }: PageProps) {
+export default function MonitorDetails({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [monitor, setMonitor] = useState<MonitorDetail>();
   const [loading, setIsloading] = useState(true);
@@ -51,7 +51,7 @@ export default function MonitorDetails({ params }: PageProps) {
   const supabase = createClient();
 
   const loadData = useCallback(async () => {
-    const { id } = await params;
+    const { id } = params;
     console.log(id);
     if (!id) {
       return;
