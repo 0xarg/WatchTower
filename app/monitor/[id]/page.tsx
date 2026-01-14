@@ -1,15 +1,11 @@
-"use client";
-import React, { useCallback, useEffect } from "react";
+import MonitorClient from "./MonitorClient";
+
 type PageProps = {
   params: {
     id: string;
   };
 };
-const page = ({ params }: PageProps) => {
-  const { id } = params;
-  console.log(id);
 
-  return <div>hi</div>;
-};
-
-export default page;
+export default function Page({ params }: PageProps) {
+  return <MonitorClient id={params.id} />;
+}
