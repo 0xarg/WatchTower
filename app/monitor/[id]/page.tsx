@@ -52,6 +52,9 @@ export default function MonitorDetails({ params }: PageProps) {
 
   const loadData = useCallback(async () => {
     const { id } = await params;
+    if (!id) {
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from("monitors")
@@ -76,7 +79,7 @@ export default function MonitorDetails({ params }: PageProps) {
       )
     )`
         )
-        .eq("id", id) // Replace with actual ID
+        .eq("id", id)
         .order("created_at", {
           referencedTable: "check_results",
           ascending: false,
