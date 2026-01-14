@@ -45,7 +45,7 @@ export function MonitorTable({ monitors, onPauseToggle }: MonitorTableProps) {
             key={monitor.id}
             className="floating-card p-4 animate-fade-up opacity-0"
             style={{ animationDelay: `${250 + index * 50}ms` }}
-            onClick={() => router.push(`/monitor/${monitor.id}`)}
+            onClick={() => router.push(`/monitor?id=${monitor.id}`)}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -187,7 +187,7 @@ export function MonitorTable({ monitors, onPauseToggle }: MonitorTableProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => router.push(`/monitor/${monitor.id}`)}
+                        onClick={() => router.push(`/monitor?id=${monitor.id}`)}
                         className="h-8 w-8 lg:h-9 lg:w-9 rounded-lg sm:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                       >
                         <Eye className="h-4 w-4" />

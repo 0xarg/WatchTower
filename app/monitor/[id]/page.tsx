@@ -1,5 +1,11 @@
-import MonitorClient from "./MonitorClient";
+"use client";
 
-export default function Page({ params }: any) {
-  return <MonitorClient id={params.id} />;
+import { useSearchParams } from "next/navigation";
+
+export default function Page() {
+  const queryParams = useSearchParams();
+  const id = queryParams.get("id");
+  console.log(id);
+
+  return <>{id}</>;
 }
