@@ -1,19 +1,14 @@
 "use client";
 import React, { useCallback, useEffect } from "react";
 type PageProps = {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 };
 const page = ({ params }: PageProps) => {
-  const loadData = useCallback(async () => {
-    const { id } = await params;
-    console.log(id);
-  }, [params]);
+  const { id } = params;
+  console.log(id);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
   return <div>hi</div>;
 };
 
