@@ -51,7 +51,7 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
   const loadData = useCallback(async () => {
-    const { id } = params;
+    const { id } = await params;
     console.log(id);
     if (!id) {
       return;
