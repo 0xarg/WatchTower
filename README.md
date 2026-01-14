@@ -1,109 +1,138 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# WatchTower
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+A production-ready website uptime monitoring system that continuously checks endpoints, detects downtime using incident-based logic, and sends alerts when services go down and recover.
+
+## Table of Contents
+
+- [Features](#features)
+- [Why WatchTower](#why-watchtower)
+- [How It Works](#how-it-works)
+- [Architecture Highlights](#architecture-highlights)
+- [Tech Stack](#tech-stack)
+- [Data Model](#data-model)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
 ## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+- **Automated Uptime Checks**: HTTP/HTTPS endpoint monitoring with configurable intervals and timeouts.
+- **Incident-Based Downtime Detection**: Avoids false positives and alert spam by using incident lifecycles.
+- **Email Alerts**: Notifications for incident start (DOWN) and resolution (UP).
+- **Derived Status**: Status is computed from real data, not stored flags.
+- **Secure Background Worker**: Protected by secret headers for serverless execution.
+- **Serverless-Friendly**: Designed for predictable costs and no long-running processes.
 
-## Demo
+## Why WatchTower
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+Unlike basic monitoring demos that simply ping URLs and toggle status flags, WatchTower is built like a real monitoring system. It incorporates background workers, incident lifecycles, alert deduplication, and serverless-safe execution, making it suitable for SaaS foundations, internal tools, or reference architectures for cron-driven systems.
 
-## Deploy to Vercel
+## How It Works
 
-Vercel deployment will guide you through creating a Supabase account and project.
+The system operates continuously without manual intervention:
+GitHub Actions (cron)
+↓
+Secure Worker API (/api/worker/checks)
+↓
+HTTP checks + optimistic locking
+↓
+check_results → incidents
+↓
+Email alerts (DOWN / UP)
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## Architecture Highlights
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+- **Incident Model**: Incidents open after consecutive failures and close on recovery.
+- **Optimistic Locking**: Prevents duplicate checks in concurrent runs.
+- **Alert Deduplication**: One alert per incident, with retries on delivery failure.
+- **Hard Execution Limits**: Bounded work per cron run for predictable serverless costs.
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+These patterns mirror those in professional monitoring platforms.
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+## Tech Stack
 
-## Clone and run locally
+### Frontend
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS / shadcn/ui
 
-2. Create a Next.js app using the Supabase Starter template npx command
+### Backend / Infrastructure
 
+- Supabase (PostgreSQL, Auth, RLS)
+- GitHub Actions (cron jobs)
+- Vercel (deployment)
+
+### Alerts
+
+- Email via Resend
+
+## Data Model
+
+- **monitors**: Configuration (URL, interval, timeout)
+- **check_results**: Append-only check history
+- **incidents**: Open/resolved downtime periods
+- **alerts**: Alert delivery tracking
+
+Status is derived from data, never stored explicitly.
+
+## Prerequisites
+
+- Node.js (version 18 or higher)
+- pnpm
+- Supabase account
+- Resend account (for email alerts)
+
+## Installation
+
+1. Clone the repository:
    ```bash
-   npx create-next-app --example with-supabase with-supabase-app
+   git clone https://github.com/yourusername/watchtower.git
+   cd watchtower
    ```
-
+2. Install dependencies:
    ```bash
-   yarn create next-app --example with-supabase with-supabase-app
+   pnpm install
    ```
-
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory and add the following variables:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+    RESEND_API_KEY=your_resend_api_key
+    WORKER_SECRET_HEADER=your_worker_secret_header_value
    ```
+4. Set up Supabase:
+   - Create a new Supabase project.
+   - Run the SQL migrations located in the `supabase/migrations` directory to set up the database schema.
+5. Deploy the application:
+   - You can deploy the Next.js application to Vercel or any other hosting provider that
+     supports Next.js.
 
-3. Use `cd` to change into the app's directory
+## Usage
 
-   ```bash
-   cd with-supabase-app
-   ```
+- Add monitors via the web interface.
+- The GitHub Actions cron job will automatically run the background worker to perform checks and handle incidents
+- Monitor email alerts for downtime notifications.
 
-4. Rename `.env.example` to `.env.local` and update the following:
+## Contributing
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+Contributions are welcome! Please open issues and submit pull requests for improvements or bug fixes.
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+## License
 
-5. You can now run the Next.js local development server:
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-   ```bash
-   npm run dev
-   ```
+## Contact
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+For questions or support, please open an issue on GitHub or contact the maintainer at your
+email address.
+Anurag Poonia - [GitHub](https://github.com/0xarg)

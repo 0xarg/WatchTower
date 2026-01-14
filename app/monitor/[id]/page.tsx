@@ -52,6 +52,7 @@ export default function MonitorDetails({ params }: PageProps) {
 
   const loadData = useCallback(async () => {
     const { id } = await params;
+    console.log(id);
     if (!id) {
       return;
     }
