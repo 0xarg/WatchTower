@@ -49,9 +49,9 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
   const [editUrl, setEditUrl] = useState(monitor?.url);
   const [editInterval, setEditInterval] = useState(monitor?.interval_seconds);
   const supabase = createClient();
+  const { id } = params;
 
   const loadData = useCallback(async () => {
-    const { id } = await params;
     console.log(id);
     if (!id) {
       return;
