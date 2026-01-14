@@ -165,6 +165,7 @@ export default function MonitorDetails({ params }: { params: { id: string } }) {
   }, []);
 
   useEffect(() => {
+    router.refresh();
     loadData();
   }, [loadData]);
 
