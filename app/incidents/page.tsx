@@ -8,56 +8,15 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { IncidentUI } from "@/lib/types/ui/incidentDetail";
 import { formatDistanceToNow } from "date-fns";
+import { Loader } from "@/components/Loader";
 
 type FilterType = "all" | "open" | "resolved";
-
-const mocksIncidents = [
-  {
-    id: "1",
-    monitor: "Documentation",
-    status: "open",
-    startedAt: "Jan 4, 2025 10:23",
-    resolvedAt: null,
-    duration: "Ongoing",
-  },
-  {
-    id: "2",
-    monitor: "Production API",
-    status: "resolved",
-    startedAt: "Dec 28, 2024 14:32",
-    resolvedAt: "Dec 28, 2024 14:35",
-    duration: "3 min",
-  },
-  {
-    id: "3",
-    monitor: "Production API",
-    status: "resolved",
-    startedAt: "Dec 25, 2024 09:15",
-    resolvedAt: "Dec 25, 2024 09:18",
-    duration: "3 min",
-  },
-  {
-    id: "4",
-    monitor: "Marketing Website",
-    status: "resolved",
-    startedAt: "Dec 20, 2024 16:45",
-    resolvedAt: "Dec 20, 2024 16:52",
-    duration: "7 min",
-  },
-  {
-    id: "5",
-    monitor: "Staging Server",
-    status: "resolved",
-    startedAt: "Dec 15, 2024 08:00",
-    resolvedAt: "Dec 15, 2024 08:12",
-    duration: "12 min",
-  },
-];
 
 export default function Incidents() {
   const supabase = createClient();
   const [incidents, setIncidents] = useState<IncidentUI[]>();
   const [filter, setFilter] = useState<FilterType>("all");
+  const [loading, setIsloading] = useState(true);
 
   const filteredIncidents = incidents?.filter((incident) => {
     if (filter === "all") return true;
@@ -77,19 +36,27 @@ export default function Incidents() {
         id,name,url)`
         )
         .order("started_at", { ascending: false });
-      console.log(data);
       setIncidents(data as IncidentUI[]);
       if (error) {
         throw error;
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsloading(false);
     }
   }, [supabase]);
 
   useEffect(() => {
     fetchIncidents();
   }, [fetchIncidents]);
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full justify-center items-center">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <MainLayout>
@@ -105,7 +72,7 @@ export default function Incidents() {
             </p>
           </div>
           <div className="animate-fade-up opacity-0 delay-100">
-            <SyncButton />
+            <SyncButton onSync={() => fetchIncidents()} />
           </div>
         </div>
 

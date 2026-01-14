@@ -525,8 +525,12 @@ export default function Index() {
               >
                 Features
               </button>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Pricing
+              <a
+                href="https://github.com/0xarg/watchtower"
+                target="blank"
+                className="hover:text-foreground transition-colors"
+              >
+                Github
               </a>
               <a href="#" className="hover:text-foreground transition-colors">
                 Documentation

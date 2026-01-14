@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { SyncButton } from "@/components/SyncButton";
 import { cn } from "@/lib/utils";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Loader } from "@/components/Loader";
 
 const mockServices = [
   { name: "Production API", status: "up", uptime: "99.98%" },
@@ -15,6 +16,12 @@ const mockServices = [
 export default function StatusPage() {
   const allUp = mockServices.every((s) => s.status === "up");
   const someDown = mockServices.some((s) => s.status === "down");
+
+  // return (
+  //   <div className="flex h-screen w-full justify-center items-center">
+  //     <Loader />
+  //   </div>
+  // );
 
   return (
     <MainLayout>

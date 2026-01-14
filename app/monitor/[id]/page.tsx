@@ -30,100 +30,8 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MonitorDetail } from "@/lib/types/ui/monitorDetail";
-
-// Mock data
-const mockMonitor = {
-  id: "1",
-  name: "Production API",
-  url: "https://api.example.com",
-  status: "up" as const,
-  interval: 60,
-  isPaused: false,
-};
-
-const mockChecxks = [
-  {
-    id: "1",
-    time: "2 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 145,
-    error: null,
-  },
-  {
-    id: "2",
-    time: "3 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 152,
-    error: null,
-  },
-  {
-    id: "3",
-    time: "4 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 138,
-    error: null,
-  },
-  {
-    id: "4",
-    time: "5 min ago",
-    status: "down",
-    httpCode: 503,
-    responseTime: 0,
-    error: "Service Unavailable",
-  },
-  {
-    id: "5",
-    time: "6 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 167,
-    error: null,
-  },
-  {
-    id: "6",
-    time: "7 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 143,
-    error: null,
-  },
-  {
-    id: "7",
-    time: "8 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 155,
-    error: null,
-  },
-  {
-    id: "8",
-    time: "9 min ago",
-    status: "up",
-    httpCode: 200,
-    responseTime: 149,
-    error: null,
-  },
-];
-
-const mockIncidents = [
-  {
-    id: "1",
-    status: "resolved",
-    startedAt: "Dec 28, 2024 14:32",
-    resolvedAt: "Dec 28, 2024 14:35",
-    duration: "3 min",
-  },
-  {
-    id: "2",
-    status: "resolved",
-    startedAt: "Dec 25, 2024 09:15",
-    resolvedAt: "Dec 25, 2024 09:18",
-    duration: "3 min",
-  },
-];
+import { Loader } from "@/components/Loader";
+import { formatDistanceToNow } from "date-fns";
 
 type PageProps = {
   params: Promise<{
@@ -186,24 +94,45 @@ export default function MonitorDetails({ params }: PageProps) {
       setIsloading(false);
     }
   }, []);
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        const { error } = await supabase
-          .from("monitors")
-          .delete()
-          .eq("id", monitor?.id);
-        if (error) {
-          throw error;
-        }
-        await loadData();
-      } catch (error) {
-        alert("Error deleting monitor");
-        console.log(error);
+  const handleDelete = useCallback(async () => {
+    const { id } = await params;
+
+    try {
+      const { error } = await supabase.from("monitors").delete().eq("id", id);
+      if (error) {
+        throw error;
       }
-    },
-    [loadData]
-  );
+      router.push("/dashboard");
+    } catch (error) {
+      alert("Error deleting monitor");
+      console.log(error);
+    }
+  }, [loadData]);
+
+  const handleEditMonitor = useCallback(async () => {
+    if (!monitor) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("monitors")
+        .update({
+          name: editName,
+          url: editUrl,
+          interval_seconds: editInterval,
+        })
+        .eq("id", monitor.id);
+      if (error) {
+        throw error;
+      }
+      loadData();
+      setEditDialogOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [editName, editUrl, editInterval, loadData]);
+
   const handlePauseToggle = useCallback(async (status: boolean) => {
     const isPaused = !status;
     if (!monitor) {
@@ -231,30 +160,17 @@ export default function MonitorDetails({ params }: PageProps) {
       );
     }
   }, []);
-  // const handleTogglePause = () => {
-  //   setMonitor((prev) => ({ ...prev, isPaused: !prev?.is_paused }));
-  // };
-
-  // const handleDelete = () => {
-  //   router.push("/dashboard");
-  // };
-
-  // const handleEdit = () => {
-  //   setMonitor((prev) => ({
-  //     ...prev,
-  //     name: editName,
-  //     url: editUrl,
-  //     interval: editInterval,
-  //   }));
-  //   setEditDialogOpen(false);
-  // };
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-screen w-full justify-center items-center">
+        <Loader />
+      </div>
+    );
   }
 
   return (
@@ -394,7 +310,7 @@ export default function MonitorDetails({ params }: PageProps) {
                       Cancel
                     </Button>
                     <Button
-                      // onClick={handleEdit}
+                      onClick={() => handleEditMonitor()}
                       className="rounded-xl w-full sm:w-auto"
                     >
                       Save Changes
@@ -434,7 +350,7 @@ export default function MonitorDetails({ params }: PageProps) {
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={() => handleDelete}
+                      onClick={() => handleDelete()}
                       className="rounded-xl w-full sm:w-auto"
                     >
                       Delete
@@ -458,7 +374,7 @@ export default function MonitorDetails({ params }: PageProps) {
               <div key={check.id} className="floating-card p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">
-                    {check.created_at}
+                    {formatDistanceToNow(new Date(check.created_at))}
                   </span>
                   {check.status === "up" ? (
                     <CheckCircle2 className="h-5 w-5 text-success" />
@@ -517,7 +433,7 @@ export default function MonitorDetails({ params }: PageProps) {
                       className="hover:bg-secondary/30 transition-colors"
                     >
                       <td className="px-4 sm:px-5 py-4 text-sm">
-                        {check.created_at}
+                        {formatDistanceToNow(new Date(check.created_at))}
                       </td>
                       <td className="px-4 sm:px-5 py-4">
                         {check.status === "up" ? (

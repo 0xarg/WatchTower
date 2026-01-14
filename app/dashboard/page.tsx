@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { MonitorDB } from "@/lib/types/database/monitors";
 import { MonitorUI } from "@/lib/types/ui/monitors";
 import { mapToUI } from "@/lib/mapToUI";
+import { Loader } from "@/components/Loader";
 
 const initialMonitors: Monitor[] = [
   {
@@ -71,7 +72,8 @@ export interface AddMonitor {
 export default function Dashboard() {
   const [monitors, setMonitors] = useState<MonitorUI[]>([]);
   const supabase = createClient();
-  const [monitorAdd, setMonitorAdd] = useState<AddMonitor>(INITIAL_MONITOR);
+  const [loading, setIsloading] = useState(true);
+
   const fetchMonitors = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -80,94 +82,14 @@ export default function Dashboard() {
       if (error) {
         throw error;
       }
-      console.log(data);
       setMonitors(mapToUI(data));
     } catch (error) {
       console.log(error);
       alert("error getting monitors");
+    } finally {
+      setIsloading(false);
     }
   }, []);
-
-  const handlePause = useCallback(async (id: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from("monitors")
-        .update({
-          is_paused: status,
-        })
-        .eq("id", id);
-      await fetchMonitors();
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      alert("Error updating status");
-      console.error(error);
-    }
-  }, []);
-
-  const handleEditMonitor = useCallback(async () => {
-    try {
-      const { error } = await supabase
-        .from("monitors")
-        .update({
-          name: monitorAdd.name,
-          url: monitorAdd.url,
-          interval_seconds: monitorAdd.interval_seconds,
-          timeout_seconds: monitorAdd.timeout_seconds,
-          is_paused: monitorAdd.is_paused,
-        })
-        .eq("id", monitorAdd.id);
-    } catch (error) {
-      alert("Error editing monitor");
-      console.log(error);
-    }
-  }, [monitorAdd, fetchMonitors]);
-
-  const handleCheckStatus = useCallback(async () => {
-    try {
-      const res = await axios.post("/api/worker/checks", {
-        headers: {
-          "x-watchtower-secret": process.env.WORKER_SECRET,
-        },
-      });
-      console.log(res.data);
-      alert(res.data.message);
-      await fetchMonitors();
-    } catch (error) {
-      alert("error checking status");
-      console.log(error);
-    }
-  }, []);
-
-  const handleAddMjonitor = useCallback(async () => {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      console.log(monitorAdd);
-      if (!user || userError) {
-        alert("not auhtenticated");
-        throw new Error("Not authenticated");
-      }
-      const { error } = await supabase.from("monitors").insert({
-        user_id: user.id,
-        name: monitorAdd?.name,
-        url: monitorAdd?.url,
-        interval_seconds: monitorAdd?.interval_seconds,
-        timeout_seconds: monitorAdd?.timeout_seconds,
-        is_paused: false,
-      });
-      if (error) {
-        throw error;
-      }
-      await fetchMonitors();
-    } catch (error) {
-      alert("Error creating monitor");
-      console.log(error);
-    }
-  }, [supabase, fetchMonitors, monitorAdd]);
 
   const stats = {
     total: monitors.length,
@@ -185,7 +107,6 @@ export default function Dashboard() {
       setMonitors((prev) =>
         prev.map((m) => (m.id === id ? { ...m, isPaused: !m.isPaused } : m))
       );
-      console.log(isPaused);
       try {
         const { data, error } = await supabase
           .from("monitors")
@@ -194,7 +115,6 @@ export default function Dashboard() {
           })
           .eq("id", id)
           .select();
-        console.log(data);
         if (error) {
           throw error;
         }
@@ -232,6 +152,14 @@ export default function Dashboard() {
     fetchMonitors();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full justify-center items-center">
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6 sm:space-y-8 lg:space-y-10 max-w-6xl">
@@ -246,7 +174,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2 animate-fade-up opacity-0 delay-100">
-            <SyncButton />
+            <SyncButton onSync={() => fetchMonitors()} />
             <AddMonitorDialog onAdd={handleAddMonitor} />
           </div>
         </div>

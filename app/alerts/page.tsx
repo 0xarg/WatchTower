@@ -8,61 +8,12 @@ import { createClient } from "@/lib/supabase/client";
 import { AlertUI } from "@/lib/types/ui/alertDetail";
 import { useCallback, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-
-const mockAelertLogs = [
-  {
-    id: "1",
-    incident: "Documentation - Down",
-    channel: "Email",
-    success: true,
-    sentAt: "Jan 4, 2025 10:23",
-  },
-  {
-    id: "2",
-    incident: "Production API - Down",
-    channel: "Email",
-    success: true,
-    sentAt: "Dec 28, 2024 14:32",
-  },
-  {
-    id: "3",
-    incident: "Production API - Recovered",
-    channel: "Email",
-    success: true,
-    sentAt: "Dec 28, 2024 14:35",
-  },
-  {
-    id: "4",
-    incident: "Production API - Down",
-    channel: "Email",
-    success: false,
-    sentAt: "Dec 25, 2024 09:15",
-  },
-  {
-    id: "5",
-    incident: "Production API - Recovered",
-    channel: "Email",
-    success: true,
-    sentAt: "Dec 25, 2024 09:18",
-  },
-  {
-    id: "6",
-    incident: "Marketing Website - Down",
-    channel: "Email",
-    success: true,
-    sentAt: "Dec 20, 2024 16:45",
-  },
-  {
-    id: "7",
-    incident: "Marketing Website - Recovered",
-    channel: "Email",
-    success: true,
-    sentAt: "Dec 20, 2024 16:52",
-  },
-];
+import { Loader } from "@/components/Loader";
 
 export default function AlertLogs() {
   const supabase = createClient();
+  const [loading, setIsloading] = useState(true);
+
   const [alerts, setAlerts] = useState<AlertUI[]>();
 
   const fetchAlerts = useCallback(async () => {
@@ -77,19 +28,27 @@ export default function AlertLogs() {
             )`
         )
         .order("sent_at", { ascending: false });
-      console.log(data);
       setAlerts(data as AlertUI[]);
       if (error) {
         throw error;
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsloading(false);
     }
   }, [supabase]);
 
   useEffect(() => {
     fetchAlerts();
   }, [fetchAlerts]);
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full justify-center items-center">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <MainLayout>

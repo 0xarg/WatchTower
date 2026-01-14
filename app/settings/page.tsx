@@ -8,11 +8,13 @@ import { Bell, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserDB } from "@/lib/types/database/user";
+import { Loader } from "@/components/Loader";
 
 export default function Settings() {
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [user, setUser] = useState<UserDB>();
   const router = useRouter();
+  const [loading, setIsloading] = useState(true);
   const supabase = createClient();
 
   const fetchUser = useCallback(async () => {
@@ -24,13 +26,21 @@ export default function Settings() {
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsloading(false);
     }
   }, [supabase]);
 
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
-
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full justify-center items-center">
+        <Loader />
+      </div>
+    );
+  }
   return (
     <MainLayout>
       <div className="space-y-6 sm:space-y-8 lg:space-y-10 max-w-2xl">
