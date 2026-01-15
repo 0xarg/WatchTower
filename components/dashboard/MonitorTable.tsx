@@ -59,9 +59,17 @@ export function MonitorTable({ monitors, onPauseToggle }: MonitorTableProps) {
                 />
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{monitor.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {truncateUrl(monitor.url)}
-                  </p>
+                  <a
+                    href={monitor?.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 hover:text-foreground transition-colors truncate max-w-[200px] sm:max-w-none"
+                  >
+                    <span className="truncate">
+                      {truncateUrl(monitor?.url)}
+                    </span>
+                    <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  </a>
                 </div>
               </div>
               <Badge
@@ -155,10 +163,17 @@ export function MonitorTable({ monitors, onPauseToggle }: MonitorTableProps) {
                           {monitor.name}
                         </p>
                         <div className="flex items-center gap-1.5 text-xs lg:text-sm text-muted-foreground mt-0.5">
-                          <span className="truncate max-w-[120px] lg:max-w-none">
-                            {truncateUrl(monitor.url)}
-                          </span>
-                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <a
+                            href={monitor?.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 hover:text-foreground transition-colors truncate max-w-[200px] sm:max-w-none"
+                          >
+                            <span className="truncate">
+                              {truncateUrl(monitor?.url)}
+                            </span>
+                            <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                          </a>
                         </div>
                       </div>
                     </div>

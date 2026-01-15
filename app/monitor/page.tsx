@@ -58,6 +58,7 @@ function MonitorContent() {
     if (!id) {
       return;
     }
+    setIsloading(true);
     try {
       const { data, error } = await supabase
         .from("monitors")
@@ -66,6 +67,7 @@ function MonitorContent() {
     check_results (
       id,
       status,
+      error,
       status_code,
       response_time_ms,
       created_at
@@ -90,7 +92,6 @@ function MonitorContent() {
 
         .limit(50, { foreignTable: "check_results" }) // vital for performance!
         .single();
-
       setMonitor(data);
       if (error) throw error;
     } catch (error) {
@@ -107,8 +108,9 @@ function MonitorContent() {
       }
       router.push("/dashboard");
     } catch (error) {
-      alert("Error deleting monitor");
       console.log(error);
+    } finally {
+      setDeleteDialogOpen(false);
     }
   }, [loadData, id]);
 
@@ -136,33 +138,34 @@ function MonitorContent() {
     }
   }, [editName, editUrl, editInterval, loadData]);
 
-  const handlePauseToggle = useCallback(async (status: boolean) => {
-    const isPaused = !status;
-    if (!monitor) {
-      return;
-    }
-    setMonitor((prev) => (prev ? { ...prev, is_paused: isPaused } : prev));
-    console.log(isPaused);
-    try {
-      const { data, error } = await supabase
-        .from("monitors")
-        .update({
-          is_paused: isPaused,
-        })
-        .eq("id", monitor.id)
-        .select();
-      console.log(data);
-      if (error) {
-        throw error;
+  const handlePauseToggle = useCallback(
+    async (status: boolean, monitor: MonitorDetail) => {
+      const isPaused = !status;
+      if (!monitor) {
+        return;
       }
-      if (data[0].is_paused !== isPaused) throw Error;
-    } catch (error) {
-      console.log(error);
-      setMonitor((prev) =>
-        prev ? { ...prev, is_paused: !prev.is_paused } : prev
-      );
-    }
-  }, []);
+      setMonitor((prev) => (prev ? { ...prev, is_paused: isPaused } : prev));
+      try {
+        const { data, error } = await supabase
+          .from("monitors")
+          .update({
+            is_paused: isPaused,
+          })
+          .eq("id", monitor.id)
+          .select();
+        if (error) {
+          throw error;
+        }
+        if (data[0].is_paused !== isPaused) throw Error;
+      } catch (error) {
+        console.log(error);
+        setMonitor((prev) =>
+          prev ? { ...prev, is_paused: !prev.is_paused } : prev
+        );
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     loadData();
@@ -191,6 +194,7 @@ function MonitorContent() {
                   <div
                     className={cn(
                       "h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full shrink-0",
+
                       monitor?.check_results[0].status! === "up"
                         ? "bg-success pulse-dot"
                         : "bg-destructive pulse-dot"
@@ -229,24 +233,28 @@ function MonitorContent() {
             </div>
 
             <div className="flex items-center gap-2 ml-10 sm:ml-0">
-              <Button
-                variant="outline"
-                onClick={() => handlePauseToggle(monitor?.is_paused!)}
-                className="gap-2 rounded-xl text-xs sm:text-sm"
-                size="sm"
-              >
-                {monitor?.is_paused ? (
-                  <>
-                    <Play className="h-4 w-4" />
-                    <span className="hidden sm:inline">Resume</span>
-                  </>
-                ) : (
-                  <>
-                    <Pause className="h-4 w-4" />
-                    <span className="hidden sm:inline">Pause</span>
-                  </>
-                )}
-              </Button>
+              {monitor && (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    handlePauseToggle(monitor?.is_paused!, monitor)
+                  }
+                  className="gap-2 rounded-xl text-xs sm:text-sm"
+                  size="sm"
+                >
+                  {monitor?.is_paused ? (
+                    <>
+                      <Play className="h-4 w-4" />
+                      <span className="hidden sm:inline">Resume</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="h-4 w-4" />
+                      <span className="hidden sm:inline">Pause</span>
+                    </>
+                  )}
+                </Button>
+              )}
 
               <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
                 <DialogTrigger asChild>
@@ -395,7 +403,9 @@ function MonitorContent() {
                   </span>
                 </div>
                 {check.error && (
-                  <p className="text-xs text-destructive mt-2">{check.error}</p>
+                  <p className="text-xs text-destructive mt-2">
+                    {check.error.split(" ")[1]}
+                  </p>
                 )}
               </div>
             ))}
@@ -457,7 +467,7 @@ function MonitorContent() {
                           : "—"}
                       </td>
                       <td className="px-4 sm:px-5 py-4 text-sm text-muted-foreground">
-                        {check.error || "—"}
+                        {check.error?.split(" ")[1] || "—"}
                       </td>
                     </tr>
                   ))}

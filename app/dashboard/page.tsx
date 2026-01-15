@@ -13,53 +13,6 @@ import { MonitorUI } from "@/lib/types/ui/monitors";
 import { mapToUI } from "@/lib/mapToUI";
 import { Loader } from "@/components/Loader";
 
-const initialMonitors: Monitor[] = [
-  {
-    id: "1",
-    name: "Production API",
-    url: "https://api.example.com",
-    status: "up",
-    lastChecked: "2 min ago",
-    avgResponseTime: 145,
-    isPaused: false,
-  },
-  {
-    id: "2",
-    name: "Marketing Website",
-    url: "https://www.example.com",
-    status: "up",
-    lastChecked: "1 min ago",
-    avgResponseTime: 312,
-    isPaused: false,
-  },
-  {
-    id: "3",
-    name: "Documentation",
-    url: "https://docs.example.com",
-    status: "down",
-    lastChecked: "Just now",
-    avgResponseTime: 0,
-    isPaused: false,
-  },
-  {
-    id: "4",
-    name: "Staging Server",
-    url: "https://staging.example.com",
-    status: "up",
-    lastChecked: "3 min ago",
-    avgResponseTime: 234,
-    isPaused: true,
-  },
-];
-const INITIAL_MONITOR = {
-  id: "",
-  name: "",
-  url: "",
-  interval_seconds: 0,
-  timeout_seconds: 0,
-  is_paused: false,
-};
-
 export interface AddMonitor {
   id: string;
   name: string;
@@ -91,6 +44,7 @@ export default function Dashboard() {
     }
   }, []);
 
+  console.log(monitors);
   const stats = {
     total: monitors.length,
     up: monitors.filter((m) => m.status === "up").length,

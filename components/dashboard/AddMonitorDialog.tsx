@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { MonitorDB } from "@/lib/types/database/monitors";
+import axios from "axios";
 
 interface AddMonitorDialogProps {
   onAdd: (monitor: {
@@ -102,12 +104,7 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-
-      console.log(name);
-      console.log(url);
-
       const { valid, normalized } = validateAndNormalize();
-      console.log(normalized);
       if (!valid) return;
 
       try {
@@ -119,19 +116,29 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
           alert("not auhtenticated");
           throw new Error("Not authenticated");
         }
-        const { error } = await supabase.from("monitors").insert({
-          user_id: user.id,
-          name: normalized.name,
-          url: normalized.url,
-          interval_seconds: interval,
-          timeout_seconds: timeout,
-          is_paused: isPaused,
-        });
+        const { data, error } = await supabase
+          .from("monitors")
+          .insert({
+            user_id: user.id,
+            name: normalized.name,
+            url: normalized.url,
+            interval_seconds: interval,
+            timeout_seconds: timeout,
+            is_paused: isPaused,
+          })
+          .select("*");
+        if (!data) {
+          throw error;
+        }
+        const monitor: MonitorDB = data[0];
         if (error) {
           throw error;
         }
+
+        await axios.post("/api/monitor", {
+          monitor,
+        });
       } catch (error) {
-        alert("Error creating monitor");
         console.log(error);
       }
 
