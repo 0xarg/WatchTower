@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
         if (!existingAlert) {
           try {
             const results = await sendEmailAlert({
-              message: "Your application is down, please take action",
+              message: "Your application is down1, please take action",
               email,
               monitorName: monitor.name,
               monitorUrl: monitor.url,
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
         if (!existingAlert) {
           try {
             const results = await sendEmailAlert({
-              message: "Your application is down, please take action",
+              message: "Your application is down2, please take action",
               email,
               monitorName: monitor.name,
               monitorUrl: monitor.url,
