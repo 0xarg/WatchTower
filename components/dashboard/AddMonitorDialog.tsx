@@ -16,6 +16,7 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { MonitorDB } from "@/lib/types/database/monitors";
 import axios from "axios";
+import { LoaderFive } from "../ui/loader";
 
 interface AddMonitorDialogProps {
   onAdd: (monitor: {
@@ -30,6 +31,7 @@ interface AddMonitorDialogProps {
 export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState("");
   const [interval, setInterval] = useState(60);
   const [timeout, setTimeout] = useState(30);
@@ -101,63 +103,58 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
     };
   };
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      const { valid, normalized } = validateAndNormalize();
-      if (!valid) return;
-
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-        if (!user || userError) {
-          alert("not auhtenticated");
-          throw new Error("Not authenticated");
-        }
-        const { data, error } = await supabase
-          .from("monitors")
-          .insert({
-            user_id: user.id,
-            name: normalized.name,
-            url: normalized.url,
-            interval_seconds: interval,
-            timeout_seconds: timeout,
-            is_paused: isPaused,
-          })
-          .select("*");
-        if (!data) {
-          throw error;
-        }
-        const monitor: MonitorDB = data[0];
-        if (error) {
-          throw error;
-        }
-
-        await axios.post("/api/monitor", {
-          monitor,
-        });
-      } catch (error) {
-        console.log(error);
+  const handleSubmit = useCallback(async () => {
+    const { valid, normalized } = validateAndNormalize();
+    if (!valid) return;
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (!user || userError) {
+        alert("not auhtenticated");
+        throw new Error("Not authenticated");
       }
-
-      onAdd({
-        name: normalized.name,
-        url: normalized.url,
-        interval,
-        timeout,
-        isPaused,
+      const { data, error } = await supabase
+        .from("monitors")
+        .insert({
+          user_id: user.id,
+          name: normalized.name,
+          url: normalized.url,
+          interval_seconds: interval,
+          timeout_seconds: timeout,
+          is_paused: isPaused,
+        })
+        .select("*");
+      if (!data) {
+        throw error;
+      }
+      const monitor: MonitorDB = data[0];
+      if (error) {
+        throw error;
+      }
+      await axios.post("/api/monitor", {
+        monitor,
       });
-      setOpen(false);
-      setName("");
-      setUrl("");
-      setInterval(60);
-      setTimeout(30);
-      setIsPaused(false);
-    },
-    [name, url, interval, timeout, isPaused, supabase]
-  );
+    } catch (error) {
+      console.log(error);
+    }
+
+    onAdd({
+      name: normalized.name,
+      url: normalized.url,
+      interval,
+      timeout,
+      isPaused,
+    });
+    setLoading(false);
+    setOpen(false);
+    setName("");
+    setUrl("");
+    setInterval(60);
+    setTimeout(30);
+    setIsPaused(false);
+  }, [name, url, interval, timeout, isPaused, supabase]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -175,7 +172,7 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
             Create a new monitor to track your website's uptime.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 pt-4">
+        <form className="space-y-4 sm:space-y-5 pt-4">
           <div className="space-y-2">
             <Label htmlFor="name">Monitor Name</Label>
             <Input
@@ -262,13 +259,27 @@ export function AddMonitorDialog({ onAdd }: AddMonitorDialogProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                setLoading(false);
+              }}
               className="rounded-xl w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" className="rounded-xl w-full sm:w-auto">
-              Create Monitor
+            <Button
+              onClick={() => {
+                handleSubmit();
+                setLoading(!loading);
+              }}
+              disabled={loading}
+              className="rounded-xl w-full sm:w-auto"
+            >
+              {loading ? (
+                <LoaderFive text="Creating" />
+              ) : (
+                "              Create Monitor"
+              )}
             </Button>
           </div>
         </form>

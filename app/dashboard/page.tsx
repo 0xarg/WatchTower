@@ -25,6 +25,7 @@ export interface AddMonitor {
 export default function Dashboard() {
   const [monitors, setMonitors] = useState<MonitorUI[]>([]);
   const supabase = createClient();
+  const [buttonLoading, setButtonLoading] = useState(false);
   const [loading, setIsloading] = useState(true);
 
   const fetchMonitors = useCallback(async () => {
@@ -44,7 +45,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  console.log(monitors);
   const stats = {
     total: monitors.length,
     up: monitors.filter((m) => m.status === "up").length,
@@ -90,16 +90,7 @@ export default function Dashboard() {
     timeout: number;
     isPaused: boolean;
   }) => {
-    const newMonitor: Monitor = {
-      id: String(Date.now()),
-      name: monitor.name,
-      url: monitor.url,
-      status: "up",
-      lastChecked: "Just now",
-      avgResponseTime: 0,
-      isPaused: monitor.isPaused,
-    };
-    setMonitors((prev) => [newMonitor, ...prev]);
+    fetchMonitors();
   };
 
   useEffect(() => {

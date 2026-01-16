@@ -40,12 +40,28 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
+
+  // First try to get the session from the auth state
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData?.session;
+
+  // Also get claims for additional validation
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
+  // User is authenticated if they have a valid session
+  const isAuthenticated = !!session?.user;
+
+  // If authenticated user visits home page, redirect to dashboard
+  if (request.nextUrl.pathname === "/" && isAuthenticated) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
   if (
     request.nextUrl.pathname !== "/" &&
-    !user &&
+    !isAuthenticated &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {

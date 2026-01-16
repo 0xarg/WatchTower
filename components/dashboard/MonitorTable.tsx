@@ -10,7 +10,7 @@ export interface Monitor {
   id: string;
   name: string;
   url: string;
-  status: "up" | "down";
+  status: "up" | "down" | "checking";
   lastChecked: string;
   avgResponseTime: number;
   isPaused: boolean;
